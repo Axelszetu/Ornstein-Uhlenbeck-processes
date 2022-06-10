@@ -19,5 +19,31 @@ SimOU <- function(d = 1, A0 = diag(d), t = 10, N = 1000){
 }
 
 OU_MLE_analytical <- function(X, dt){
+  d <- nrow(X)
+  N <- ncol(X)
+  
+  #Create matrix of increments
   dX <- apply(X, MARGIN = 1, FUN = diff)
+  #Transpose it, because apply returns the result of each application as a column.
+  dX <- t(dX)
+  
+  #Create matrix to iteratively contain terms of integral sum
+  integral_matrix_1 <- matrix(data = 0, nrow = d, ncol = d)
+  
+  #Compute each step of integral sum
+  for (i in 1:(N-1)){
+    M <- dX[,i]%*%t(X[,i])
+    integral_matrix_1 <- integral_matrix_1 + M
+  }
+  
+  integral_matrix_2 <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in 1:(N-1)){
+    M <- X[,i]%*%t(X[,i])*dt
+    integral_matrix_2 <- integral_matrix_2 + M
+  }
+  integral_matrix_2_inverted <- solve(integral_matrix_2)
+  
+  A_hat <- -1 * integral_matrix_1%*%integral_matrix_2_inverted
+  A_hat
 }
+
