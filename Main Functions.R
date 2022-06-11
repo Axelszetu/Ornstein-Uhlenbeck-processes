@@ -47,3 +47,24 @@ OU_MLE_analytical <- function(X, dt){
   A_hat
 }
 
+likelihood_evaluator <- function(A, X, dt){
+  N <- ncol(X)
+  AX <- A%*%X
+  dX <- apply(X, MARGIN = 1, FUN = diff)
+  dX <- t(dX)
+  
+  terms_in_first_sum <- numeric(length = N-1)
+  for (i in (1:(N-1))){
+    terms_in_first_sum[i] <- crossprod(AX[,i], dt[,i])
+  }
+  first_sum <- sum(terms_in_first_sum)/(N-1)
+  
+  terms_in_second_sum <- numeric(length = N)
+  for (i in (1:N)){
+    terms_in_second_sum[i] <- 
+  }
+}
+
+OU_MLE_numeric <- function(){
+  
+}

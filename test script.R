@@ -10,3 +10,4 @@ A
 test_array <- SimOU(d = d, A0 = A, t = t, N = N)
 A_mle <- OU_MLE_analytical(test_array, dt = dt)
 A_mle
+
