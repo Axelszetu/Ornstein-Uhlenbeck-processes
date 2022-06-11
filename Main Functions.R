@@ -48,6 +48,9 @@ OU_MLE_analytical <- function(X, dt){
 }
 
 likelihood_evaluator <- function(A, X, dt){
+  #This function evaluates the log-likelihood.
+  d <- nrow(X)
+  A <- matrix(data = A, nrow = d, ncol = d)
   N <- ncol(X)
   AX <- A%*%X
   dX <- apply(X, MARGIN = 1, FUN = diff)
@@ -55,16 +58,27 @@ likelihood_evaluator <- function(A, X, dt){
   
   terms_in_first_sum <- numeric(length = N-1)
   for (i in (1:(N-1))){
-    terms_in_first_sum[i] <- crossprod(AX[,i], dt[,i])
+    terms_in_first_sum[i] <- crossprod(AX[,i], dX[,i])
   }
   first_sum <- sum(terms_in_first_sum)/(N-1)
   
   terms_in_second_sum <- numeric(length = N)
   for (i in (1:N)){
-    terms_in_second_sum[i] <- 
+    terms_in_second_sum[i] <- crossprod(AX[,i])
   }
+  second_sum <- sum(terms_in_second_sum)*(dt/(2*N))
+  
+  negative_log_likelihood <- (first_sum + second_sum)
+  
+  negative_log_likelihood
 }
 
-OU_MLE_numeric <- function(){
-  
+OU_MLE_numeric <- function(X, dt){
+  d <- nrow(X)
+  par <- diag(d)
+  par <- as.vector(par)
+  optimal_pars_vector <- optim(par = par, fn = likelihood_evaluator, X = X, dt = dt)$par
+  optimal_pars_matrix <- matrix(data = optimal_pars_vector, nrow = d, ncol = d)
+  optimal_pars_matrix
 }
+  
