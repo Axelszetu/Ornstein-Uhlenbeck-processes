@@ -81,4 +81,44 @@ OU_MLE_numeric <- function(X, dt){
   optimal_pars_matrix <- matrix(data = optimal_pars_vector, nrow = d, ncol = d)
   optimal_pars_matrix
 }
+
+
+lasso_score_evaluator <- function(A, X, dt, lambda){
+  #This function evaluates the lasso score.
+  d <- nrow(X)
+  A <- matrix(data = A, nrow = d, ncol = d)
+  N <- ncol(X)
+  AX <- A%*%X
+  dX <- apply(X, MARGIN = 1, FUN = diff)
+  dX <- t(dX)
   
+  terms_in_first_sum <- numeric(length = N-1)
+  for (i in (1:(N-1))){
+    terms_in_first_sum[i] <- crossprod(AX[,i], dX[,i])
+  }
+  first_sum <- sum(terms_in_first_sum)/(N-1)
+  
+  terms_in_second_sum <- numeric(length = N)
+  for (i in (1:N)){
+    terms_in_second_sum[i] <- crossprod(AX[,i])
+  }
+  second_sum <- sum(terms_in_second_sum)*(dt/(2*N))
+  
+  one_norm <- sum(abs(A))/(d^2)
+  penalty <- lambda*one_norm
+  
+  #browser()
+  
+  negative_log_likelihood <- first_sum + second_sum + penalty
+  
+  negative_log_likelihood
+}
+
+OU_Lasso <- function(X, dt, lambda){
+  d <- nrow(X)
+  par <- diag(d)
+  par <- as.vector(par)
+  optimal_pars_vector <- optim(par = par, fn = lasso_score_evaluator, X = X, dt = dt, lambda = lambda)$par
+  optimal_pars_matrix <- matrix(data = optimal_pars_vector, nrow = d, ncol = d)
+  optimal_pars_matrix
+}
