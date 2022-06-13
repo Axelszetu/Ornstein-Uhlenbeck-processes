@@ -47,37 +47,38 @@ OU_MLE_analytical <- function(X, dt){
   A_hat
 }
 
-likelihood_evaluator <- function(A, X, dt){
-  #This function evaluates the log-likelihood.
-  d <- nrow(X)
+likelihood_evaluator_trace <- function(A, B, C){
+  d <- nrow(B)
   A <- matrix(data = A, nrow = d, ncol = d)
-  N <- ncol(X)
-  AX <- A%*%X
-  dX <- apply(X, MARGIN = 1, FUN = diff)
-  dX <- t(dX)
   
-  terms_in_first_sum <- numeric(length = N-1)
-  for (i in (1:(N-1))){
-    terms_in_first_sum[i] <- crossprod(AX[,i], dX[,i])
-  }
-  first_sum <- sum(terms_in_first_sum)/(N-1)
-  
-  terms_in_second_sum <- numeric(length = N)
-  for (i in (1:N)){
-    terms_in_second_sum[i] <- crossprod(AX[,i])
-  }
-  second_sum <- sum(terms_in_second_sum)*(dt/(2*N))
-  
-  negative_log_likelihood <- (first_sum + second_sum)
-  
-  negative_log_likelihood
+  likelihood <- sum(diag(B%*%t(A))) + sum(diag(A%*%C%*%t(A)))
+  likelihood
 }
 
 OU_MLE_numeric <- function(X, dt){
   d <- nrow(X)
+  N <- ncol(X)
+  dX <- apply(X, MARGIN = 1, FUN = diff)
+  dX <- t(dX)
+  
+  B <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in (1:(N-1))){
+    M <- dX[,i]%*%t(X[,i])
+    B <- B + M
+  }
+  B <- B/(N-1)
+  
+  C <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in (1:N)){
+    M <- X[,i]%*%t(X[,i])
+    C <- C + M
+  }
+  C <- C/(2*N)
+  C <- C*dt
+  
   par <- diag(d)
   par <- as.vector(par)
-  optimal_pars_vector <- optim(par = par, fn = likelihood_evaluator, X = X, dt = dt)$par
+  optimal_pars_vector <- optim(par = par, fn = likelihood_evaluator_trace, B = B, C = C)$par
   optimal_pars_matrix <- matrix(data = optimal_pars_vector, nrow = d, ncol = d)
   optimal_pars_matrix
 }
@@ -123,38 +124,4 @@ OU_Lasso <- function(X, dt, lambda){
   optimal_pars_matrix
 }
 
-likelihood_evaluator_trace <- function(A, B, C){
-  d <- nrow(B)
-  A <- matrix(data = A, nrow = d, ncol = d)
-  
-  likelihood <- sum(diag(B%*%t(A))) + sum(diag(A%*%C%*%t(A)))
-  likelihood
-}
 
-OU_MLE_numeric_trace <- function(X, dt){
-  d <- nrow(X)
-  N <- ncol(X)
-  dX <- apply(X, MARGIN = 1, FUN = diff)
-  dX <- t(dX)
-  
-  B <- matrix(data = 0, nrow = d, ncol = d)
-  for (i in (1:(N-1))){
-    M <- dX[,i]%*%t(X[,i])
-    B <- B + M
-  }
-  B <- B/(N-1)
-  
-  C <- matrix(data = 0, nrow = d, ncol = d)
-  for (i in (1:N)){
-    M <- X[,i]%*%t(X[,i])
-    C <- C + M
-  }
-  C <- C/(2*N)
-  C <- C*dt
-  
-  par <- diag(d)
-  par <- as.vector(par)
-  optimal_pars_vector <- optim(par = par, fn = likelihood_evaluator_trace, B = B, C = C)$par
-  optimal_pars_matrix <- matrix(data = optimal_pars_vector, nrow = d, ncol = d)
-  optimal_pars_matrix
-}

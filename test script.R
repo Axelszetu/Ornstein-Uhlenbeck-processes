@@ -17,6 +17,3 @@ A_mle_numeric
 lambda = 0.0005
 A_lasso <- OU_Lasso(X = test_array, dt = dt, lambda = lambda)
 A_lasso
-
-A_mle_numeric_trace <- OU_MLE_numeric_trace(X = test_array, dt = dt)
-A_mle_numeric_trace
