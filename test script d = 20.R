@@ -2,6 +2,15 @@
 d <- 20
 t <- 100
 N <- 10000
+dt <- t/N
 sparsity <- 0.3
 
 A <- make_drift_matrix(d = d, sparsity = sparsity)
+
+process <- SimOU(A0 = A, t = t, N = N)
+
+A_mle <- OU_MLE_analytical(X = process, dt = dt)
+
+A_Lasso <- OU_Lasso(X = process, dt = dt, lambda = 0.005)
+
+A_Dantzig <- OU_Dantzig(X = process, dt, lambda = 0.0005)

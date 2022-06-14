@@ -37,6 +37,20 @@ make_drift_matrix <- function(d, sparsity){
   A
 }
 
+C_infty <- function(A, maxiter = 1000000){
+  d <- ncol(A)
+  #n <- (1:100)
+  #ds <- rev(1/n)
+  ds <- 0.01
+  integral_matrix <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in (1:maxiter)){
+    s <- i*0.01 - 0.005
+    M <- expm(-s*A)
+    integral_matrix <- integral_matrix + tcrossprod(M)*ds
+  }
+  integral_matrix
+}
+
 
 SimOU <- function(A0, t = 10, N = 1000){
   d <- ncol(A0)
@@ -45,8 +59,15 @@ SimOU <- function(A0, t = 10, N = 1000){
   increment_matrix <- matrix(data = samples, nrow = d, ncol = N, byrow = T)
   #Create matrix to contain OU process
   OU <- matrix(nrow = d, ncol = N+1)
+  
   #Initializing
+  #Computation of covariance of stationary distribution
+  
+  #init <- C_infty(A_0)
+  #OU[,1] <- init
+  
   OU[,1] <- numeric(d)
+  
   #Computation of reusable constant
   reversion_factor <- diag(d)-A0*(t/N)
   #Computation of OU paths
