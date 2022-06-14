@@ -1,5 +1,9 @@
 # Core functions
-# Initial commit to test if the project is connected to GitHub
+library(lpSolve)
+library(Matrix)
+library(extraDistr) #for bernoulli distribution
+
+
 make_drift_matrix <- function(d, sparsity){
   A <- diag(d)
   n <- floor((d^2)*sparsity) - d
@@ -10,6 +14,7 @@ make_drift_matrix <- function(d, sparsity){
   values_inserted <- 0
   while(values_inserted < n){
     coord_found <- 0
+    attempts <- 0
     while(coord_found == 0){
       coords <- ceiling(runif(n = 2, min = 0, max = d))
       if (A[coords[1],coords[2]] == 0){
@@ -23,6 +28,10 @@ make_drift_matrix <- function(d, sparsity){
     }
     else{
       A[coords[1],coords[2]] <- 0
+    }
+    attemps <- attempts + 1
+    if(attempts %% 100 == 0){
+      cat(sum(abs(A)), "of", d^2, "found", "\n")
     }
   }
   A
