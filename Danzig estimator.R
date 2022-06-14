@@ -38,7 +38,6 @@ Dantzig_estimator <- function(X, dt, lambda){
   rhs_top <- -M_ij_vector + t*lambda
   rhs_bot <- M_ij_vector + t*lambda
   rhs <- c(rhs_top, rhs_bot)
-  #browser()
   
   lp_problem <- lp(direction = "min", objective.in = c, const.mat = B, const.dir = dir, const.rhs = rhs)
   
@@ -53,6 +52,6 @@ Dantzig_estimator <- function(X, dt, lambda){
   A
 }
 
-lambda = 0.0005
+lambda = 0.05
 A_Dantzig <- Dantzig_estimator(X = test_array, dt = dt, lambda = lambda)
 A_Dantzig

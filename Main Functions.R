@@ -1,7 +1,8 @@
 # Core functions
 # Initial commit to test if the project is connected to GitHub
 
-SimOU <- function(d = 1, A0 = diag(d), t = 10, N = 1000){
+SimOU <- function(A0, t = 10, N = 1000){
+  d <- ncol(A0)
   #We need a d-dmiensional brownian motion.
   samples = rnorm(n = d*N, mean = 0, sd = sqrt(t/N))
   increment_matrix <- matrix(data = samples, nrow = d, ncol = N, byrow = T)
