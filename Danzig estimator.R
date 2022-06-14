@@ -26,7 +26,7 @@ Dantzig_estimator <- function(X, dt, lambda){
   
   c <- rep(1, 2*d^2)
   
-  diag_block <- bdiag(replicate(d^2, t(M_2), simplify = FALSE))
+  diag_block <- bdiag(replicate(d, t(M_2), simplify = FALSE))
   B_left <- rbind(diag_block, -diag_block)
   B_right <- rbind(-diag_block, diag_block)
   B <- cbind(B_left, B_right)
