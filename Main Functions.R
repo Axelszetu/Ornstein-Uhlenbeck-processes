@@ -37,18 +37,24 @@ make_drift_matrix <- function(d, sparsity){
   A
 }
 
-C_infty <- function(A, maxiter = 1000000){
+C_infty <- function(A, maxiter = 100){
+  #browser()
   d <- ncol(A)
   #n <- (1:100)
   #ds <- rev(1/n)
   ds <- 0.01
   integral_matrix <- matrix(data = 0, nrow = d, ncol = d)
+  size_of_matrices <- numeric(100)
   for (i in (1:maxiter)){
     s <- i*0.01 - 0.005
     M <- expm(-s*A)
+    size_of_matrices[i] <- sum(abs(tcrossprod(M)))
     integral_matrix <- integral_matrix + tcrossprod(M)*ds
   }
-  integral_matrix
+  out <- list()
+  out$C <- integral_matrix
+  out$sizes <- size_of_matrices
+  out
 }
 
 
