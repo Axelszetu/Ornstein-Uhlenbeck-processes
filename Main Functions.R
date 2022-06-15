@@ -5,7 +5,7 @@ library(extraDistr) #for bernoulli distribution
 library(MASS)
 
 
-  make_drift_matrix <- function(d, sparsity){
+make_drift_matrix <- function(d, sparsity){
   A <- diag(d)
   n <- floor((d^2)*sparsity) - d
   values <- rbern(n = n, prob = 0.5)
@@ -38,29 +38,26 @@ library(MASS)
   A
 }
 
-C_infty <- function(A, maxiter = 100){
+C_infty_calculator <- function(A, ds = 0.01, maxiter = 10000, epsilon = 0.00001){
   #browser()
   d <- ncol(A)
-  #n <- (1:100)
-  #ds <- rev(1/n)
-  ds <- 0.01
   integral_matrix <- matrix(data = 0, nrow = d, ncol = d)
-  #size_of_matrices <- numeric(100)
   for (i in (1:maxiter)){
     s <- i*0.01 - 0.005
     M1 <- expm(-s*A)
     M2 <- expm(-s*t(A))
-    #size_of_matrices[i] <- sum(abs(tcrossprod(M)))
-    integral_matrix <- integral_matrix + (M1%*%M2)*ds
+    term_in_sum <- (M1%*%M2)*ds
+    integral_matrix <- integral_matrix + term_in_sum
+    if ((sum((abs(term_in_sum)) > epsilon)) == 0){
+      print("Convergence = 1")
+      break
+    }
   }
-  #out <- list()
-  #out$C <- integral_matrix
-  #out$sizes <- size_of_matrices
-  #out
+
   integral_matrix
 }
 
-C_hat <- function(X, dt){
+C_hat_calculator <- function(X){
   d <- nrow(X)
   N <- ncol(X)
   C <- matrix(data = 0, nrow = d, ncol = d)
@@ -68,8 +65,7 @@ C_hat <- function(X, dt){
     M <- X[,i]%*%t(X[,i])
     C <- C + M
   }
-  C <- C*dt
-  C <- C/(N*dt)
+  C <- C/N
   C
 }
 
