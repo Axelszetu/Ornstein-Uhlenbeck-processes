@@ -2,9 +2,10 @@
 library(lpSolve)
 library(Matrix)
 library(extraDistr) #for bernoulli distribution
+library(MASS)
 
 
-make_drift_matrix <- function(d, sparsity){
+  make_drift_matrix <- function(d, sparsity){
   A <- diag(d)
   n <- floor((d^2)*sparsity) - d
   values <- rbern(n = n, prob = 0.5)
@@ -44,19 +45,33 @@ C_infty <- function(A, maxiter = 100){
   #ds <- rev(1/n)
   ds <- 0.01
   integral_matrix <- matrix(data = 0, nrow = d, ncol = d)
-  size_of_matrices <- numeric(100)
+  #size_of_matrices <- numeric(100)
   for (i in (1:maxiter)){
     s <- i*0.01 - 0.005
-    M <- expm(-s*A)
-    size_of_matrices[i] <- sum(abs(tcrossprod(M)))
-    integral_matrix <- integral_matrix + tcrossprod(M)*ds
+    M1 <- expm(-s*A)
+    M2 <- expm(-s*t(A))
+    #size_of_matrices[i] <- sum(abs(tcrossprod(M)))
+    integral_matrix <- integral_matrix + (M1%*%M2)*ds
   }
-  out <- list()
-  out$C <- integral_matrix
-  out$sizes <- size_of_matrices
-  out
+  #out <- list()
+  #out$C <- integral_matrix
+  #out$sizes <- size_of_matrices
+  #out
+  integral_matrix
 }
 
+C_hat <- function(X, dt){
+  d <- nrow(X)
+  N <- ncol(X)
+  C <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in (1:N)){
+    M <- X[,i]%*%t(X[,i])
+    C <- C + M
+  }
+  C <- C*dt
+  C <- C/(N*dt)
+  C
+}
 
 SimOU <- function(A0, t = 10, N = 1000){
   d <- ncol(A0)
