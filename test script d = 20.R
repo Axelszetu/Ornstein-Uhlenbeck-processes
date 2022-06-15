@@ -30,3 +30,7 @@ lambdas <- exp(bases)
 lambda_L <- cross_validator(process, dt = dt, f = OU_Lasso, pars = lambdas, split = 0.8)
 A_Lasso_CV <- OU_Lasso(X = process, dt = dt, lambda = lambda_L)
 A_Lasso_CV #Looks good to me
+
+lambda_D <- cross_validator(process, dt = dt, f = OU_Dantzig, pars = lambdas, split = 0.8)
+A_Dantzig_CV <- OU_Dantzig(X = process, dt = dt, lambda = lambda_D)
+A_Dantzig

@@ -253,7 +253,7 @@ OU_Dantzig <- function(X, dt, lambda){
   A
 }
 
-cross_validator <- function(X, dt, f = OU_Lasso, pars, split = 0.8){
+cross_validator <- function(X, dt, f, pars, split = 0.8){
   #Setting constant values
   no_pars <- length(pars)
   scores <- numeric(length = no_pars)
