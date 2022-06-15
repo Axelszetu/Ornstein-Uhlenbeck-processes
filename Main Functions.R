@@ -159,18 +159,24 @@ OU_MLE_numeric <- function(X, dt){
   optimal_pars_matrix
 }
 
-lasso_score_trace <- function(A, B, C, lambda){
+lasso_score_trace <- function(A, B, C, lambda, penalization = "L1"){
   d <- nrow(B)
   A <- matrix(data = A, nrow = d, ncol = d)
   
-  one_norm <- sum(abs(A))/(d^2)
-  penalty <- lambda*one_norm
+  if(penalization == "L1"){
+    one_norm <- sum(abs(A))/(d^2)
+    penalty <- lambda*one_norm
+  }
+  if(penalization == "F"){
+    F_norm <- sum(A^2)/d^2
+    penalty <- lambda*F_norm
+  }
   
   likelihood <- sum(diag(B%*%t(A))) + sum(diag(A%*%C%*%t(A))) + penalty
   likelihood
 }
 
-OU_Lasso <- function(X, dt, lambda){
+OU_Lasso <- function(X, dt, lambda, penalization = "L1"){
   d <- nrow(X)
   N <- ncol(X)
   dX <- apply(X, MARGIN = 1, FUN = diff)
@@ -193,7 +199,7 @@ OU_Lasso <- function(X, dt, lambda){
   
   par <- diag(d)
   par <- as.vector(par)
-  optimal_pars_vector <- optim(par = par, fn = lasso_score_trace, B = B, C = C, lambda = lambda, method = "BFGS")$par
+  optimal_pars_vector <- optim(par = par, fn = lasso_score_trace, B = B, C = C, lambda = lambda, penalization = penalization, method = "BFGS")$par
   optimal_pars_matrix <- matrix(data = optimal_pars_vector, nrow = d, ncol = d)
   optimal_pars_matrix
 }
@@ -245,4 +251,48 @@ OU_Dantzig <- function(X, dt, lambda){
   A <- A_pos - A_neg
   
   A
+}
+
+cross_validator <- function(X, dt, f = OU_Lasso, pars, split = 0.8){
+  #Setting constant values
+  no_pars <- length(pars)
+  scores <- numeric(length = no_pars)
+  #estimator <- f
+  d <- nrow(X)
+  N <- ncol(X)
+  
+  #Splitting the sample
+  split_value <- ceiling(N*split)
+  training_set <- X[,(1:split_value)]
+  validation_set <- X[,((split_value+1):N)]
+  
+  #The following will be used in the evaluation likelihood of validation set
+  dtraining_set <- apply(training_set, MARGIN = 1, FUN = diff)
+  dtraining_set <- t(dtraining_set)
+  
+  B <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in (1:(split_value-1))){
+    M <- dtraining_set[,i]%*%t(training_set[,i])
+    B <- B + M
+  }
+  B <- B/(split_value-1)
+  
+  C <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in (1:split_value)){
+    M <- training_set[,i]%*%t(training_set[,i])
+    C <- C + M
+  }
+  C <- C/(2*split_value)
+  C <- C*dt
+  
+  #For each lambda, estimate A_lambda and compute (negative log-)likelihood or validation set under A_lambda
+  for (i in (1:no_pars)){
+    A_lambda <- f(training_set, dt, pars[i])
+    scores[i] <- likelihood_evaluator_trace(A_lambda, B, C)
+  }
+  
+  #Extracting optimal pars value
+  index_of_minimum <- which.min(scores)
+  optimal_parameter <- pars[index_of_minimum]
+  optimal_parameter
 }
