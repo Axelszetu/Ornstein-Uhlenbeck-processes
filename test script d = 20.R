@@ -34,3 +34,7 @@ A_Lasso_CV #Looks good to me
 lambda_D <- cross_validator(process, dt = dt, f = OU_Dantzig, pars = lambdas, split = 0.8)
 A_Dantzig_CV <- OU_Dantzig(X = process, dt = dt, lambda = lambda_D)
 A_Dantzig
+
+#Below are tests for OU_Lasso with F-norm
+A_Lasso_F <- OU_Lasso(X = process, dt = dt, lambda = lambda_L, penalization = "F")
+A_Lasso_F #This looks good too
