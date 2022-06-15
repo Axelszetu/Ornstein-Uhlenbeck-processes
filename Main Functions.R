@@ -69,13 +69,13 @@ C_hat_calculator <- function(X){
   C
 }
 
-SimOU <- function(A0, t = 10, N = 1000){
+SimOU <- function(A0, t = 10, N = 1000, burn = 1000){
   d <- ncol(A0)
   #We need a d-dmiensional brownian motion.
-  samples = rnorm(n = d*N, mean = 0, sd = sqrt(t/N))
-  increment_matrix <- matrix(data = samples, nrow = d, ncol = N, byrow = T)
+  samples = rnorm(n = d*(N+burn), mean = 0, sd = sqrt(t/N))
+  increment_matrix <- matrix(data = samples, nrow = d, ncol = N+burn, byrow = T)
   #Create matrix to contain OU process
-  OU <- matrix(nrow = d, ncol = N+1)
+  OU <- matrix(nrow = d, ncol = N+1+burn)
   
   #Initializing
   #Computation of covariance of stationary distribution
@@ -88,10 +88,10 @@ SimOU <- function(A0, t = 10, N = 1000){
   #Computation of reusable constant
   reversion_factor <- diag(d)-A0*(t/N)
   #Computation of OU paths
-  for (i in 2:(N+1)){
+  for (i in 2:(N+1+burn)){
     OU[,i] <- reversion_factor%*%OU[,i-1] + increment_matrix[,i-1]
   }
-  OU
+  OU <- OU[,burn:(N+burn)]
 }
 
 OU_MLE_analytical <- function(X, dt){

@@ -17,4 +17,4 @@ A_mle <- OU_MLE_analytical(X = process, dt = dt)
 
 A_Lasso <- OU_Lasso(X = process, dt = dt, lambda = 0.005)
 
-A_Dantzig <- OU_Dantzig(X = process, dt, lambda = 0.0005)
+A_Dantzig <- OU_Dantzig(X = process, dt, lambda = 0.005)
