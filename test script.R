@@ -26,3 +26,6 @@ test2 <- SimOU(A0 = A2, t = t, N = N)
 A2_Dantzig <- OU_Dantzig(X = test2, dt = dt, lambda = lambda)
 A2_Dantzig
 A2
+
+A2_Lasso <- OU_Lasso(X = test2, dt = dt, lambda = lambda)
+A2_Lasso

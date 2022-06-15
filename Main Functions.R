@@ -193,7 +193,7 @@ OU_Lasso <- function(X, dt, lambda){
   
   par <- diag(d)
   par <- as.vector(par)
-  optimal_pars_vector <- optim(par = par, fn = lasso_score_trace, B = B, C = C, lambda = lambda)$par
+  optimal_pars_vector <- optim(par = par, fn = lasso_score_trace, B = B, C = C, lambda = lambda, method = "BFGS")$par
   optimal_pars_matrix <- matrix(data = optimal_pars_vector, nrow = d, ncol = d)
   optimal_pars_matrix
 }
