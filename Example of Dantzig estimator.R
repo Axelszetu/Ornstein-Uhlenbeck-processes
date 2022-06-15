@@ -116,7 +116,7 @@ OU_Dantzig <- function(X, dt, lambda){
 N <- 10000
 t <- 100
 dt <- t/N
-lambda <- 0.005
+lambda <- 0.005 #Adjustment might be necessary depending on other parameters
 d <- 6
 sparsity <- 0.35
 
