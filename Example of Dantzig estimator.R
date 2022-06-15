@@ -116,10 +116,12 @@ OU_Dantzig <- function(X, dt, lambda){
 N <- 10000
 t <- 100
 dt <- t/N
-lambda = 0.005
+lambda <- 0.005
+d <- 6
+sparsity <- 0.35
 
 
-A2 <- make_drift_matrix(d = 6, sparsity = 0.35)
+A2 <- make_drift_matrix(d = d, sparsity = sparsity)
 test2 <- SimOU(A0 = A2, t = t, N = N)
 
 A2_Dantzig <- OU_Dantzig(X = test2, dt = dt, lambda = lambda)
