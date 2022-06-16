@@ -265,6 +265,14 @@ ggplot(data = A_L2_melt, mapping = aes(x = Column, y = Row, fill = value)) + geo
 The following is a function that selects the optimal lambda from a provided list by cross validation.
 It allows for any estimator to be used - as long as it returns a drift matrix of correct dimensions.
 ```{r}
+likelihood_evaluator_trace <- function(A, B, C){
+  d <- nrow(B)
+  A <- matrix(data = A, nrow = d, ncol = d)
+  
+  likelihood <- sum(diag(B%*%t(A))) + sum(diag(A%*%C%*%t(A)))
+  likelihood
+}
+
 cross_validator <- function(X, dt, f, pars, split = 0.8){
   #Setting constant values
   no_pars <- length(pars)
@@ -310,11 +318,21 @@ cross_validator <- function(X, dt, f, pars, split = 0.8){
 }
 ```
 We perform cross validation on the lambda values exp(4), exp(3), ... exp(-7)
-(At current not actually performed because it takes a long time. It will certainly be done for Dantzig since it is faster.)
+
 ```{r}
 bases <- (4:-7)
 lambdas <- exp(bases)
 lambda_L <- cross_validator(process, dt = dt, f = OU_Lasso, pars = lambdas, split = 0.8)
+```
+We compute the Lasso estimator with the found value of lambda
+```{r}
+A_L_CV <- OU_Lasso(X = process, dt = dt, lambda = exp(-7), penalization = "L1")
+A_L_CV_melt <- melt(t(A_L_CV), varnames = c("Column", "Row"))
+ggplot(data = A_L_CV_melt, mapping = aes(x = Column, y = Row, fill = value)) + geom_tile(color = "white") +
+  scale_fill_gradient2(low = rgb(0,0,219,maxColorValue = 255), high = rgb(219,0,0,maxColorValue = 255), mid = "white",
+                       midpoint = 0, limit = limit, space = "Lab", 
+                       name="Drift") +
+  scale_y_reverse() + coord_fixed() + ggtitle("A_L_CV")
 ```
 
 
