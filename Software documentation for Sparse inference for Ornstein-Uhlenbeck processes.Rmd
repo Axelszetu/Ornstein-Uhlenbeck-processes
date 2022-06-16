@@ -174,14 +174,14 @@ ggplot(data = A_melt, mapping = aes(x = Column, y = Row, fill = value)) + geom_t
   scale_fill_gradient2(low = rgb(0,0,219,maxColorValue = 255), high = rgb(219,0,0,maxColorValue = 255), mid = "white",
                        midpoint = 0, limit = limit, space = "Lab", 
                        name="Drift") +
-  scale_y_reverse() + coord_fixed() + ggtitle(A)
+  scale_y_reverse() + coord_fixed() + ggtitle("A_0")
 
 A_hat_melt <- melt(t(A_hat), varnames = c("Column", "Row"))
 ggplot(data = A_hat_melt, mapping = aes(x = Column, y = Row, fill = value)) + geom_tile(color = "white") +
   scale_fill_gradient2(low = rgb(0,0,219,maxColorValue = 255), high = rgb(219,0,0,maxColorValue = 255), mid = "white",
                        midpoint = 0, limit = limit, space = "Lab", 
                        name="Drift") +
-  scale_y_reverse() + coord_fixed() + ggtitle(A_hat)
+  scale_y_reverse() + coord_fixed() + ggtitle("A_MLE")
 ```
 
 
