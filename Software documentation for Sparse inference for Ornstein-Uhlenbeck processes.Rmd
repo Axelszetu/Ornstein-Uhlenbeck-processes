@@ -1,0 +1,118 @@
+---
+title: "Software documentation for Sparse inference for Ornstein Uhlenbeck processes"
+author: "Axel Ming Szetu"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+We will use the follwowing packages:
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+library(lpSolve)
+library(Matrix)
+library(extraDistr) #for bernoulli distribution
+library(MASS)
+```
+
+# Methods
+
+## d-dimansional Ornstein-Uhlenbeck processes
+
+### Generation of sparse drift matrix
+The function for generating d-dimensional drift matrices with eigenvalues with strictly positive real parts:
+```{r}
+make_drift_matrix <- function(d, sparsity){
+  A <- diag(d)
+  n <- floor((d^2)*sparsity) - d
+  values <- rbern(n = n, prob = 0.5)
+  values <- (values - 0.5)*2
+  
+  #browser()
+  values_inserted <- 0
+  while(values_inserted < n){
+    coord_found <- 0
+    attempts <- 0
+    while(coord_found == 0){
+      coords <- ceiling(runif(n = 2, min = 0, max = d))
+      if (A[coords[1],coords[2]] == 0){
+        A[coords[1],coords[2]] <- values[values_inserted+1]
+        coord_found <- 1
+      }
+    }
+    
+    if (sum(Re(eigen(A)$values) > 0) == d){
+      values_inserted <- values_inserted + 1
+    }
+    else{
+      A[coords[1],coords[2]] <- 0
+    }
+    attemps <- attempts + 1
+    if(attempts %% 100 == 0){
+      #cat(sum(abs(A)), "of", d^2, "found", "\n")
+    }
+  }
+  A
+}
+```
+
+### Numerical simulation
+The function for simulating a d-dimensional Ornstein-Uhlenbeck process with specified drift parameter, time scale and number of intermediate points. Initialization is currently done by letting the sumulation run for some time before starting observation.
+
+```{r}
+SimOU <- function(A0, t = 10, N = 1000, burn = 1000){
+  d <- ncol(A0)
+  #We need a d-dmiensional brownian motion.
+  samples = rnorm(n = d*(N+burn), mean = 0, sd = sqrt(t/N))
+  increment_matrix <- matrix(data = samples, nrow = d, ncol = N+burn, byrow = T)
+  #Create matrix to contain OU process
+  OU <- matrix(nrow = d, ncol = N+1+burn)
+  
+  #Initializing
+  #Computation of covariance of stationary distribution
+  
+  #init <- C_infty(A_0)
+  #OU[,1] <- init
+  
+  OU[,1] <- numeric(d)
+  
+  #Computation of reusable constant
+  reversion_factor <- diag(d)-A0*(t/N)
+  #Computation of OU paths
+  for (i in 2:(N+1+burn)){
+    OU[,i] <- reversion_factor%*%OU[,i-1] + increment_matrix[,i-1]
+  }
+  OU <- OU[,burn:(N+burn)]
+}
+```
+
+### Sample paths
+The following generates a drift matrix A_0 of dimension 8x8 and simulates a path from an OU process with drift matrix A_0.
+
+```{r paths example, cache=TRUE}
+d <- 8
+sparsity <- 0.3
+t <- 300
+N <- 50000
+burn <- 10000
+set.seed(1)
+A_0 <- make_drift_matrix(d = d, sparsity = sparsity)
+sample_path <- SimOU(A_0, t = t, N = N, burn = burn)
+
+plot_data <- as.data.frame(t(sample_path))
+plot_data$x <- seq(from = 0, to = t, by = t/N)
+melded_plot_data <- melt(plot_data, id.vars = "x")
+ggplot(melded_plot_data, aes( x=x, y=value, colour=variable, group=variable )) + 
+  geom_line()
+```
+
+
+
+
+# Results
