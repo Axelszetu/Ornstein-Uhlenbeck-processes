@@ -102,7 +102,7 @@ d <- 8
 sparsity <- 0.3
 t <- 300
 N <- 50000
-burn <- 80000
+burn <- 10000
 set.seed(1)
 A_0 <- make_drift_matrix(d = d, sparsity = sparsity)
 sample_path <- SimOU(A_0, t = t, N = N, burn = burn)
@@ -335,74 +335,6 @@ ggplot(data = A_L_CV_melt, mapping = aes(x = Column, y = Row, fill = value)) + g
   scale_y_reverse() + coord_fixed() + ggtitle("A_L_CV")
 ```
 ## The Dantzig estimator
-We use the lpSolve package for the simplex algorithm.
-The following function computes the Dantzig estimator given a data and a regularization parameter lambda.
-```{r}
-OU_Dantzig <- function(X, dt, lambda){
-  d <- nrow(X)
-  N <- ncol(X)
-  t <- dt*N
-  dX <- apply(X, MARGIN = 1, FUN = diff)
-  dX <- t(dX)
-  
-  M_1 <- matrix(data = 0, nrow = d, ncol = d)
-  for (i in 1:(N-1)){
-    M <- dX[,i]%*%t(X[,i])
-    M_1 <- M_1 + M
-  }
-  
-  M_2 <- matrix(data = 0, nrow = d, ncol = d)
-  for (i in 1:(N-1)){
-    M <- X[,i]%*%t(X[,i])*dt
-    M_2 <- M_2 + M
-  }
-  
-  A_mle <- -1 * M_1%*%solve(M_2)
-  
-  c <- rep(1, 2*d^2)
-  
-  diag_block <- bdiag(replicate(d, t(M_2), simplify = FALSE))
-  B_left <- rbind(diag_block, -diag_block)
-  B_right <- rbind(-diag_block, diag_block)
-  B <- cbind(B_left, B_right)
-  B <- as.matrix(B)
-  
-  dir <- rep("<=", 2*d^2)
-  
-  M_ij_vector <- as.vector(t(M_1))
-  rhs_top <- -M_ij_vector + t*lambda
-  rhs_bot <- M_ij_vector + t*lambda
-  rhs <- c(rhs_top, rhs_bot)
-  
-  lp_problem <- lp(direction = "min", objective.in = c, const.mat = B, const.dir = dir, const.rhs = rhs)
-  
-  solution <- lp_problem$solution
-  A_pos_values <- solution[1:d^2]
-  A_pos <- matrix(data = A_pos_values, nrow = d, ncol = d, byrow = T)
-  A_neg_values <- solution[(d^2 + 1):(2*d^2)]
-  A_neg <- matrix(data = A_neg_values, nrow = d, ncol = d, byrow = T)
-  
-  A <- A_pos - A_neg
-  
-  A
-}
-```
-We calibrate lambda by the same cross validation we used earlier and compute the dantzig estimator for the found lambda.
-```{r}
-lambdas_D <- exp((4:-8))
-lambda_D <- cross_validator(X = process, dt = dt, f = OU_Dantzig, pars = lambdas_D, split = 0.8)
-A_D <- OU_Dantzig(X = process, dt = dt, lambda = lambda_D)
-```
-```{r}
-A_D_melt <- melt(t(A_D), varnames = c("Column", "Row"))
-ggplot(data = A_D_melt, mapping = aes(x = Column, y = Row, fill = value)) + geom_tile(color = "white") +
-  scale_fill_gradient2(low = rgb(0,0,219,maxColorValue = 255), high = rgb(219,0,0,maxColorValue = 255), mid = "white",
-                       midpoint = 0, limit = limit, space = "Lab", 
-                       name="Drift") +
-  scale_y_reverse() + coord_fixed() + ggtitle("A_D")
-```
-
-
 
 
 
