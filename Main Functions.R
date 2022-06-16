@@ -3,6 +3,7 @@ library(lpSolve)
 library(Matrix)
 library(extraDistr) #for bernoulli distribution
 library(MASS)
+library(expm)
 
 
 make_drift_matrix <- function(d, sparsity){

@@ -7,7 +7,7 @@ sparsity <- 0.3
 
 A <- make_drift_matrix(d = d, sparsity = sparsity)
 
-C_infty <- C_infty_calculator(A, ds = 0.1)
+#C_infty <- C_infty_calculator(A, ds = 0.1)
 
 C_h <- C_hat(A, dt = dt)
 

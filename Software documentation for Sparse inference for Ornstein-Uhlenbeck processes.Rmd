@@ -19,6 +19,8 @@ library(lpSolve)
 library(Matrix)
 library(extraDistr) #for bernoulli distribution
 library(MASS)
+library(expm)
+theme_set(theme_minimal())
 ```
 
 # Methods
@@ -95,7 +97,7 @@ SimOU <- function(A0, t = 10, N = 1000, burn = 1000){
 ### Sample paths
 The following generates a drift matrix A_0 of dimension 8x8 and simulates a path from an OU process with drift matrix A_0.
 
-```{r paths example, cache=TRUE}
+```{r paths example}
 d <- 8
 sparsity <- 0.3
 t <- 300
@@ -106,11 +108,82 @@ A_0 <- make_drift_matrix(d = d, sparsity = sparsity)
 sample_path <- SimOU(A_0, t = t, N = N, burn = burn)
 
 plot_data <- as.data.frame(t(sample_path))
-plot_data$x <- seq(from = 0, to = t, by = t/N)
-melded_plot_data <- melt(plot_data, id.vars = "x")
-ggplot(melded_plot_data, aes( x=x, y=value, colour=variable, group=variable )) + 
-  geom_line()
+plot_data$t <- seq(from = 0, to = t, by = t/N)
+melded_plot_data <- melt(plot_data, id.vars = "t")
+ggplot(melded_plot_data, aes( x=t, y=value, colour=variable, group=variable )) + 
+  geom_line() + theme_minimal()
 ```
+
+## Maximum likelihood estimation for vector Ornstein-Uhlenbeck processes
+Here we generate the drift matrix and OU_process that we will be working with for the remaining project.
+```{r make A and process}
+d <- 20
+t <- 300
+N <- 500000
+burn <- 100000
+dt <- t/N
+sparsity <- 0.3
+
+set.seed(1)
+A <- make_drift_matrix(d = d, sparsity = sparsity)
+
+process <- SimOU(A0 = A, t = t, N = N, burn  = burn)
+```
+
+The following defines the function to to compute the maximum likelihood estimator analytically.
+```{r MLE definition}
+OU_MLE_analytical <- function(X, dt){
+  d <- nrow(X)
+  N <- ncol(X)
+  
+  #Create matrix of increments
+  dX <- apply(X, MARGIN = 1, FUN = diff)
+  #Transpose it, because apply returns the result of each application as a column.
+  dX <- t(dX)
+  
+  #Create matrix to iteratively contain terms of integral sum
+  integral_matrix_1 <- matrix(data = 0, nrow = d, ncol = d)
+  
+  #Compute each step of integral sum
+  for (i in 1:(N-1)){
+    M <- dX[,i]%*%t(X[,i])
+    integral_matrix_1 <- integral_matrix_1 + M
+  }
+  
+  integral_matrix_2 <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in 1:(N-1)){
+    M <- X[,i]%*%t(X[,i])*dt
+    integral_matrix_2 <- integral_matrix_2 + M
+  }
+  integral_matrix_2_inverted <- solve(integral_matrix_2)
+  
+  A_hat <- -1 * integral_matrix_1%*%integral_matrix_2_inverted
+  A_hat
+}
+```
+
+We now compute the MLE of the simulated process and compare it to the true drift matrix with a heatmap of the covariance matrix.
+
+```{r MLE computation and heatmap}
+A_hat <- OU_MLE_analytical(X = process, dt = dt)
+```
+```{r}
+limit <- c(-1.3, 1.3)
+A_melt <- melt(t(A), varnames = c("Column", "Row"))
+ggplot(data = A_melt, mapping = aes(x = Column, y = Row, fill = value)) + geom_tile(color = "white") +
+  scale_fill_gradient2(low = rgb(0,0,219,maxColorValue = 255), high = rgb(219,0,0,maxColorValue = 255), mid = "white",
+                       midpoint = 0, limit = limit, space = "Lab", 
+                       name="Drift") +
+  scale_y_reverse() + coord_fixed() + ggtitle(A)
+
+A_hat_melt <- melt(t(A_hat), varnames = c("Column", "Row"))
+ggplot(data = A_hat_melt, mapping = aes(x = Column, y = Row, fill = value)) + geom_tile(color = "white") +
+  scale_fill_gradient2(low = rgb(0,0,219,maxColorValue = 255), high = rgb(219,0,0,maxColorValue = 255), mid = "white",
+                       midpoint = 0, limit = limit, space = "Lab", 
+                       name="Drift") +
+  scale_y_reverse() + coord_fixed() + ggtitle(A_hat)
+```
+
 
 
 
