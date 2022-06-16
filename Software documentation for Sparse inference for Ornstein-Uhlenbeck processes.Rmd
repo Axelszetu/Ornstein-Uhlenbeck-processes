@@ -184,6 +184,138 @@ ggplot(data = A_hat_melt, mapping = aes(x = Column, y = Row, fill = value)) + ge
   scale_y_reverse() + coord_fixed() + ggtitle("A_MLE")
 ```
 
+## The Lasso estimator
+
+### Numerical evaluation of likelihood function, computation of Lasso estimator and performance of Lasso estimator.
+
+We find the solution to the Lasso minimization problem by passing a function that evaluate Lasso score to an optimization routine.
+The following chunk defines functions for evaluating likelihood and optimizing lasso score.
+
+```{r}
+lasso_score_trace <- function(A, B, C, lambda, penalization = "L1"){
+  d <- nrow(B)
+  A <- matrix(data = A, nrow = d, ncol = d)
+  
+  if(penalization == "L1"){
+    one_norm <- sum(abs(A))/(d^2)
+    penalty <- lambda*one_norm
+  }
+  if(penalization == "F"){
+    F_norm <- sum(A^2)/d^2
+    penalty <- lambda*F_norm
+  }
+  
+  likelihood <- sum(diag(B%*%t(A))) + sum(diag(A%*%C%*%t(A))) + penalty
+  likelihood
+}
+
+OU_Lasso <- function(X, dt, lambda, penalization = "L1"){
+  d <- nrow(X)
+  N <- ncol(X)
+  dX <- apply(X, MARGIN = 1, FUN = diff)
+  dX <- t(dX)
+  
+  B <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in (1:(N-1))){
+    M <- dX[,i]%*%t(X[,i])
+    B <- B + M
+  }
+  B <- B/(N-1)
+  
+  C <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in (1:N)){
+    M <- X[,i]%*%t(X[,i])
+    C <- C + M
+  }
+  C <- C/(2*N)
+  C <- C*dt
+  
+  par <- diag(d)
+  par <- as.vector(par)
+  optimal_pars_vector <- optim(par = par, fn = lasso_score_trace, B = B, C = C, lambda = lambda, penalization = penalization, method = "BFGS")$par
+  optimal_pars_matrix <- matrix(data = optimal_pars_vector, nrow = d, ncol = d)
+  optimal_pars_matrix
+}
+```
+
+We now compute the Lasso estimator $A_L$.
+```{r}
+lambda <- 0.005
+A_L1 <- OU_Lasso(X = process, dt = dt, lambda = lambda)
+A_L2 <- OU_Lasso(X = process, dt = dt, lambda = lambda, penalization = "F")
+```
+
+Below we make make the heatmap plots of A_L1 and A_L2.
+```{r}
+A_L1_melt <- melt(t(A_L1), varnames = c("Column", "Row"))
+ggplot(data = A_L1_melt, mapping = aes(x = Column, y = Row, fill = value)) + geom_tile(color = "white") +
+  scale_fill_gradient2(low = rgb(0,0,219,maxColorValue = 255), high = rgb(219,0,0,maxColorValue = 255), mid = "white",
+                       midpoint = 0, limit = limit, space = "Lab", 
+                       name="Drift") +
+  scale_y_reverse() + coord_fixed() + ggtitle("A_L1")
+
+A_L2_melt <- melt(t(A_L2), varnames = c("Column", "Row"))
+ggplot(data = A_L2_melt, mapping = aes(x = Column, y = Row, fill = value)) + geom_tile(color = "white") +
+  scale_fill_gradient2(low = rgb(0,0,219,maxColorValue = 255), high = rgb(219,0,0,maxColorValue = 255), mid = "white",
+                       midpoint = 0, limit = limit, space = "Lab", 
+                       name="Drift") +
+  scale_y_reverse() + coord_fixed() + ggtitle("A_L2")
+```
+### Cross-validation
+The following is a function that selects the optimal lambda from a provided list by cross validation.
+It allows for any estimator to be used - as long as it returns a drift matrix of correct dimensions.
+```{r}
+cross_validator <- function(X, dt, f, pars, split = 0.8){
+  #Setting constant values
+  no_pars <- length(pars)
+  scores <- numeric(length = no_pars)
+  #estimator <- f
+  d <- nrow(X)
+  N <- ncol(X)
+  
+  #Splitting the sample
+  split_value <- ceiling(N*split)
+  training_set <- X[,(1:split_value)]
+  validation_set <- X[,((split_value+1):N)]
+  
+  #The following will be used in the evaluation likelihood of validation set
+  dtraining_set <- apply(training_set, MARGIN = 1, FUN = diff)
+  dtraining_set <- t(dtraining_set)
+  
+  B <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in (1:(split_value-1))){
+    M <- dtraining_set[,i]%*%t(training_set[,i])
+    B <- B + M
+  }
+  B <- B/(split_value-1)
+  
+  C <- matrix(data = 0, nrow = d, ncol = d)
+  for (i in (1:split_value)){
+    M <- training_set[,i]%*%t(training_set[,i])
+    C <- C + M
+  }
+  C <- C/(2*split_value)
+  C <- C*dt
+  
+  #For each lambda, estimate A_lambda and compute (negative log-)likelihood or validation set under A_lambda
+  for (i in (1:no_pars)){
+    A_lambda <- f(training_set, dt, pars[i])
+    scores[i] <- likelihood_evaluator_trace(A_lambda, B, C)
+  }
+  
+  #Extracting optimal pars value
+  index_of_minimum <- which.min(scores)
+  optimal_parameter <- pars[index_of_minimum]
+  optimal_parameter
+}
+```
+We perform cross validation on the lambda values exp(4), exp(3), ... exp(-7)
+(At current not actually performed because it takes a long time. It will certainly be done for Dantzig since it is faster.)
+```{r}
+bases <- (4:-7)
+lambdas <- exp(bases)
+lambda_L <- cross_validator(process, dt = dt, f = OU_Lasso, pars = lambdas, split = 0.8)
+```
 
 
 
