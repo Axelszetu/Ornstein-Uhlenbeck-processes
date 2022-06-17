@@ -183,33 +183,38 @@ OU_Lasso <- function(X, dt, lambda, penalization = "L1"){
   N <- ncol(X)
   dX <- apply(X, MARGIN = 1, FUN = diff)
   dX <- t(dX)
+  t <- N*dt
   
   B <- matrix(data = 0, nrow = d, ncol = d)
   for (i in (1:(N-1))){
     M <- dX[,i]%*%t(X[,i])
     B <- B + M
   }
-  B <- B/(N-1)
+  B_1 <- B/(N-1)
   
   C <- matrix(data = 0, nrow = d, ncol = d)
   for (i in (1:N)){
     M <- X[,i]%*%t(X[,i])
     C <- C + M
   }
-  C <- C/(2*N)
   C <- C*dt
+  C_1 <- C/(2*N)
   
   objective <- function(A){
-    lasso_score_trace(A, B, C, lambda = lambda, penalization = "L1")
+    likelihood_evaluator_trace(A, B, C)
   }
   
   gradient <- function(A){
-    
+    A <- matrix(data = A, nrow = d, ncol = d)
+    M_1 <- B
+    M_2 <- C
+    grad <- as.vector((A%*%M_2 - M_1)/t)
+    grad
   }
   
   par <- diag(d)
   par <- as.vector(par)
-  optimal_pars_vector <- optim(par = par, fn = lasso_score_trace, B = B, C = C, lambda = lambda, penalization = penalization, method = "BFGS")$par
+  optimal_pars_vector <- lbfgs(call_eval = objective, call_grad = gradient, vars = par, orthantwise_c = lambda)$par
   optimal_pars_matrix <- matrix(data = optimal_pars_vector, nrow = d, ncol = d)
   optimal_pars_matrix
 }
