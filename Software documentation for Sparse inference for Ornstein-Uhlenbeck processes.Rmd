@@ -188,8 +188,8 @@ Here we generate the drift matrix and OU_process that we will be working with fo
 ```{r make A and process}
 d <- 20
 t <- 300
-N <- 500000
-burn <- 100000
+N <- 50000
+burn <- 10000
 dt <- t/N
 sparsity <- 0.3
 
@@ -390,7 +390,7 @@ We perform cross validation on the lambda values exp(4), exp(3), ... exp(-7)
 
 ```{r}
 bases <- (4:-7)
-lambdas <- exp(bases)
+lambdas <- 10^bases
 lambda_L <- cross_validator(process, dt = dt, f = OU_Lasso, pars = lambdas, split = 0.8)
 ```
 We compute the Lasso estimator with the found value of lambda
@@ -458,22 +458,44 @@ OU_Dantzig <- function(X, dt, lambda){
 ```
 We calibrate lambda by the same cross validation we used earlier and compute the dantzig estimator for the found lambda.
 ```{r}
-lambdas_D <- exp((4:-8))
+lambdas_D <- 10^(3:-7)
 lambda_D <- cross_validator(X = process, dt = dt, f = OU_Dantzig, pars = lambdas_D, split = 0.8)
-A_D <- OU_Dantzig(X = process, dt = dt, lambda = lambda_D)
+A_D_CV <- OU_Dantzig(X = process, dt = dt, lambda = lambda_D)
 ```
 ```{r}
-A_D_melt <- melt(t(A_D), varnames = c("Column", "Row"))
-ggplot(data = A_D_melt, mapping = aes(x = Column, y = Row, fill = value)) + geom_tile(color = "white") +
+A_D_CV_melt <- melt(t(A_D_CV), varnames = c("Column", "Row"))
+ggplot(data = A_D_CV_melt, mapping = aes(x = Column, y = Row, fill = value)) + geom_tile(color = "white") +
   scale_fill_gradient2(low = rgb(0,0,219,maxColorValue = 255), high = rgb(219,0,0,maxColorValue = 255), mid = "white",
                        midpoint = 0, limit = limit, space = "Lab", 
                        name="Drift") +
-  scale_y_reverse() + coord_fixed() + ggtitle("A_D")
+  scale_y_reverse() + coord_fixed() + ggtitle("A_D_CV")
+```
+
+
+# Results
+
+We compute norm of the error matrices and compare them.
+```{r}
+normalization <- sum(abs(A))
+error_mle <- sum(abs(A-A_hat))/normalization
+error_L <- sum(abs(A-A_L_CV))/normalization
+error_D <- sum(abs(A-A_D_CV))/normalization
+errors <- c(error_mle, error_L, error_D)
+```
+
+Manual calibration of estimators
+```{r}
+lambda_L_manual <- 0.1
+A_L_manual <- OU_Lasso(process, dt = dt, lambda = lambda_L_manual)
+lambda_D_manual <- 0.01
+A_D_manual <- OU_Dantzig(process, dt = dt, lambda = lambda_D_manual)
+```
+Computation and comparison of relative errors:
+```{r}
+error_L_manual <- sum(abs(A-A_L_manual))/normalization
+error_D_manual <- sum(abs(A-A_D_manual))/normalization
+errors <- c(error_mle, error_L_manual, error_D_manual)
 ```
 
 
 
-
-
-
-# Results
