@@ -4,6 +4,7 @@ library(Matrix)
 library(extraDistr) #for bernoulli distribution
 library(MASS)
 library(expm)
+library(lbfgs)
 
 
 make_drift_matrix <- function(d, sparsity){
@@ -197,6 +198,14 @@ OU_Lasso <- function(X, dt, lambda, penalization = "L1"){
   }
   C <- C/(2*N)
   C <- C*dt
+  
+  objective <- function(A){
+    lasso_score_trace(A, B, C, lambda = lambda, penalization = "L1")
+  }
+  
+  gradient <- function(A){
+    
+  }
   
   par <- diag(d)
   par <- as.vector(par)
