@@ -22,6 +22,56 @@ library(MASS)
 library(expm)
 theme_set(theme_minimal())
 ```
+## Brownian motion
+We use the following function to simulate brownian motion and plot sample trajectories:
+```{r}
+SimBM <- function(d = 2, t = 10, N = 1000){
+  #generating samples of the appropriate scale
+  samples = rnorm(n = d*N, mean = 0, sd = sqrt(t/N))
+  #making a 0-start
+  samples = c(numeric(d),samples)
+  #construction of path
+  increment_matrix <- matrix(data = samples, nrow = N+1, ncol = d, byrow = T)
+  #we now wish to apply cumsum columnwise
+  path_matrix <- apply(increment_matrix, 2, cumsum)
+  #Return matrix with each dimension in column
+  path_matrix
+}
+```
+```{r}
+BM_paths <- SimBM(d = 6, t = 10, N = 10000)
+plot_data <- as.data.frame(BM_paths)
+plot_data$t <- seq(from = 0, to = 10, by = 10/10000)
+melded_plot_data <- melt(plot_data, id.vars = "t")
+ggplot(melded_plot_data, aes( x=t, y=value, colour=variable, group=variable )) + 
+  geom_line() + theme_minimal()
+```
+## Scalar Ornstein-Uhlenbeck processes
+We use the following to simulate scalar OU-processes.
+```{r}
+SimScalarOU <- function(W_0 = 0, t = 10, N = 10000, theta = 0.1, sigma = 1){
+  dW <- rnorm(n = N, mean = 0, sd = sqrt(t/N)*sigma)
+  W <- numeric(N+1)
+  W[1] <- W_0
+  for (i in (1:N)){
+    W[i+1] <- W[i] -theta*W[i]*(t/N) + sigma*dW[i]
+  }
+  W
+}
+
+scalar_ou <- SimScalarOU()
+```
+Show a path
+```{r}
+plot_data <- as.data.frame(scalar_ou)
+plot_data$t <- seq(from = 0, to = 10, by = 10/10000)
+melded_plot_data <- melt(plot_data, id.vars = "t")
+ggplot(melded_plot_data, aes( x=t, y=value, colour=variable, group=variable )) + 
+  geom_line() + theme_minimal()
+```
+
+
+
 
 # Methods
 
