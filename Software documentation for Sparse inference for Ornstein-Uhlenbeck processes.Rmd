@@ -1,6 +1,6 @@
 ---
 title: "Software documentation for Sparse inference for Ornstein Uhlenbeck processes"
-author: "Axel Ming Szetu"
+author: "Exam number 49"
 date: "`r Sys.Date()`"
 output: html_document
 ---
