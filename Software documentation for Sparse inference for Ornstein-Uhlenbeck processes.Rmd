@@ -86,7 +86,7 @@ for (i in(1:n)){
   simulated_values[i] <- theta_hat
 }
 
-hist(simulated_values)
+ggplot(data = melt(simulated_values), aes(x = value)) + geom_histogram() + geom_vline(aes(xintercept = 0.1, color = "red"))
 ```
 
 
