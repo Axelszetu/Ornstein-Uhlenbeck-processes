@@ -478,7 +478,7 @@ We compute norm of the error matrices and compare them.
 ```{r}
 normalization <- sum(abs(A))
 error_mle <- sum(abs(A-A_hat))/normalization
-error_L <- sum(abs(A-A_Lasso_CV))/normalization
+error_L <- sum(abs(A-A_L_CV))/normalization
 error_D <- sum(abs(A-A_D_CV))/normalization
 errors <- c(error_mle, error_L, error_D)
 ```
