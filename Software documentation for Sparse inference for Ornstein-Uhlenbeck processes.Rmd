@@ -69,6 +69,25 @@ melded_plot_data <- melt(plot_data, id.vars = "t")
 ggplot(melded_plot_data, aes( x=t, y=value, colour=variable, group=variable )) + 
   geom_line() + theme_minimal()
 ```
+## MLE of scalar Ornstein-Uhlenbeck process
+We simulate 1000 paths from an OU process with theta = 0.1.
+For each we compute the MLE and plot the results for an empirical distribution of the MLE.
+```{r}
+n <- 1000
+theta <- 0.1
+t <- 10
+N <- 1000
+dt <- t/N
+
+simulated_values <- numeric(length = n)
+for (i in(1:n)){
+  path <- SimScalarOU(theta = theta, t = t, N = N)
+  theta_hat <- OU_MLE_analytical(path, dt = dt)
+  simulated_values[i] <- theta_hat
+}
+
+hist(simulated_values)
+```
 
 
 
